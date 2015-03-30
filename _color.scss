@@ -1,0 +1,395 @@
+// @name color
+// @author Tyler Benton
+// @description These are the defaults for the `color` function.
+// @note {!!!} -
+// These should never change. If you want to change them just define your
+// own variable `$this-settings` to overwrite one or more of these settings.
+//
+// @type {map}
+// @private
+@if not variable-exists(___color-settings){
+ $___color-settings: (
+  namespace: "default", // allows for multiple name spaces, so you can create other color functions that call different maps
+  base: 0, // defines the base color to look for in the maps
+  increment: 5%, // this is a fall back increment if the color functions that are defined are lists and not maps
+  colors: (), // placeholder for defined colors, these will always be defined in $color-settings colors
+  map: "integers", // determins if you're using integers to get your light and dark values or words.(@feature - this hasn't been added yet)
+  smart-color: .25, // determins how far you go back if the color is #fff or #000 (example if you called color(#ccc, 25) that will be black but if smart color is set then it will be #060606)
+  functions: ( // holds the light and dark functions to use for the different variations. (only light, and dark can be the keys of this map)
+   light: ( // holds the light functions that will run if the variation is less than 0
+    lighten: 5%
+   ),
+   dark: ( // holds the dark functions that will run if the variation is less than 0
+    darken: 5%
+   )
+  )
+ ) !global;
+}
+
+// @name color
+// @author Tyler Benton
+// @description
+// This merges the default color settings with `$this-settings`. I decided to do this outside
+// the `color` function to improve performance by not merging the default settings and the
+// user defined settings every single time the function is called.
+// @private
+@if variable-exists(color-settings){
+ $___color-settings: map-merge($___color-settings, $color-settings);
+}
+
+
+// @name color
+// @author Tyler Benton
+// @description
+// If `$___defined-colors` doesn't exist then this creates it. This variable is to store colors as they're defined.
+// @private
+@if not variable-exists(___defined-colors){
+ $___defined-colors: () !global;
+}
+
+// @name color
+// @author Tyler Benton
+// @description
+// This function helps control the colors that are used on the site.
+// It will get dynamic color values based off a **base** color See the examples for more information.
+// It's highly configurable, and focuses on performance.
+//
+// @arg {color | map | key-of-a-map(string)} $this (#000) - The type determins how to find the correct color.
+// @arg {integer} $variation (0) - This accepts any integer value, and does support decimal points.
+// @arg {boolean} $force (false) - This forces the function to ignore already defined color values, and has it get a new varation.
+// @arg {boolean} $save (true, false) - This determins if you want to save the color variation. The reason there're two defaults is that if $force is true then by default the status of $save changes to false
+// @arg {boolean | map} $settings (false) - These are the user defined settings stored in $this-settings, if there're no color settings then it's false
+// @arg {boolean} $list (false) - This will list out the colors theme, color, and name that you specify in the settings.
+//
+// @returns {color} - The color variation that you specified from the namespace that you specifed
+//
+// @example {scss} - Simplest form:
+// color(#fff, 1.75); /\/ #e9e9e9
+//
+// @example {scss} - Defined colors:
+// $color-settings: (
+//  colors: (
+//   a: #ccc
+//  )
+// );
+// color(a, 3); /\/ #a6a6a6
+//
+// @example {scss} - Using a different map of colors other than default
+// /\/ option 1
+// $messaging-colors: (
+//  info: (
+//   -1: #cbe8f5,
+//   0: #457da6
+//  ),
+//  ...
+// );
+// color(map-get($messaging-colors, info), 2);
+//
+// /\/ option 2(much better way)
+// $messaging-settings: (
+//  name-space: "messaging",
+//  colors: (
+//   info: (
+//    -1: #cbe8f5,
+//    0: #457da6
+//   ),
+//   ...
+//  )
+// );
+// \@function messaging-color($type, $variation: 0){
+//  \@return color($type, $variation, $settings: $messaging-settings);
+// }
+// messaging-color(info, -1) /\/ #cbe8f5
+//
+// @example {scss} - How to force this function to get a variation without checking locally
+// $color-settings: (
+//  colors: (
+//   a: (
+//    5: #e2e2e2,
+//    0: #ccc,
+//    name: gray
+//   ),
+//   ...
+//  )
+// );
+// color(#fff, 5, true) /\/ forcing it will return #7f7f7f instead of #e2e2e2 which was defined
+//
+//
+@function color($this: #000, $variation: 0, $force: false, $save: true, $settings: false){
+ // Sets save to false because, if you're forcing a color variation you probably don't want to save it.
+ @if $force{
+  $save: false;
+ }
+
+ // store the user defined settings in a variable to use later for the smart color
+ $local-settings: $settings;
+
+ // define the settings to use
+ $settings: if($local-settings != false and type-of($local-settings) == map,
+             map-merge($___color-settings, $local-settings), // merge user settings with default settings.
+             $___color-settings // else return just the default color settings.
+            );
+
+ // helper variables
+ $this-type: type-of($this); // stores the type of this so it doesn't have to be called multiple times.
+ $this-base-color: false; // placeholder for the base color
+ $result: false; // placeholder for result
+ $base: map-get($settings, base); // how to determin the base color if the color is in a map
+ $name-of-color: null; // placeholder for the actual name of the color
+ $theme-of-color: null; // placeholder for the key name
+ $namespace: map-get($settings, namespace);
+
+ // @example {scss}
+ // color(#fff, 2);
+ @if $this-type == color{
+  $this-base-color: $this;
+  @if $variation == $base{
+   // @example {scss}
+   // color(#ccc, 0); /\/ #ccc
+   $result: $this-base-color;
+  }
+ }
+
+ // @example {scss}
+ // $color-settings: (
+ //  colors: (
+ //   a: #ccc
+ //  )
+ // );
+ // color(a, 3); /\/ #b2b2b2
+ @if $this-type == string{
+  // stores the name of this theme
+  $theme-of-color: $this;
+  // try to find $this in the settings colors map
+  $this: map-get(map-get($settings, colors), $this);
+
+  // reset $this-type to be the new type of this.
+  $this-type: type-of($this);
+
+  @if $this == null{
+   @error "Couldn't find '#{$this}' in $colors: #{$colors}";
+   @return false;
+  }
+ }
+
+ // @example {scss}
+ // $messaging-settings: (
+ //  name-space: "messaging",
+ //  colors: (
+ //   info: (
+ //    -1: #cbe8f5,
+ //    0: #457da6
+ //   ),
+ //   ...
+ //  )
+ // );
+ // \@function messaging-color($type, $variation: 0){
+ //  \@return color($type, $variation, $settings: $messaging-settings);
+ // }
+ // messaging-color(info, -1) /\/ #cbe8f5
+ @if not $result and $this-type == map{
+  // defineds base color
+  $this-base-color: map-get($this, $base);
+  $name-of-color: map-get($this, name);
+
+  // if there isn't a base color defined then throw this error.
+  @if not $this-base-color{
+   @error "If you are going to use a map of colors, you have to specify a base color (aka. `0`)";
+  }
+
+  // try to find the local variation
+  @if not $force{
+   $local-attempt: map-get($this, $variation);
+   @if $local-attempt{
+    $result: $local-attempt;
+   }
+  }
+ }
+
+ // Ensures that the base color is infact a color
+ @if type-of($this-base-color) != color{
+  @error "#{$this-base-color} isn't a base color";
+  @return false;
+ }
+
+
+ // try to find the color variation in storage (`$___defined-colors`)
+ @if not $result and not $force{
+  $this-namespace: map-get($___defined-colors, map-get($settings, namespace));
+  $stored-attempt: if($this-namespace != null, map-get($this-namespace, $this-base-color), null);
+  $stored-attempt: if($stored-attempt != null, map-get($stored-attempt, $variation), null);
+  @if $stored-attempt {
+   // since the color is already defined it doens't need to be defined again so just return the color
+   $result: $stored-attempt;
+  }
+ }
+
+
+ // Finds the color variation programatically if the color variation
+ // isn't found locally, and isn't found in storage
+ @if not $result{
+  $functions: map-get($settings, functions);
+  // This determins wether or not to use the light or dark function set
+  $functions: if($variation > 0, map-get($functions, dark), map-get($functions, light));
+
+  // if it's a list then make it into a map using the settings default values
+  @if type-of($functions) == list{
+   $temp: ();
+   @each $function in $functions{
+    $temp: map-merge($temp, (#{$function}: map-get($settings, increment)));
+   }
+   $functions: $temp;
+  }
+
+  // store the absolute value of the variation as a variable
+  $variation-floor: floor(abs($variation));
+  $variation-remander: abs($variation) - $variation-floor;
+
+  // reset the $result to be the base color because that's what's going to get modified.
+  $result: $this-base-color;
+
+  // Reverse for loop so you can wrap the color functions correctly in reverse order.
+  // Where the last function in the map is the first function to get called.
+  // Example: (lighten: 5%, tint: 5%) ==> lighten(tint([base color], 5%), 5%);
+  @for $i from length($functions) through 1{
+
+   // gets the color function name from $function-set
+   $function: nth(map-keys($functions), $i);
+
+   // the value of the function is the incrementor
+   $incrementor: map-get($functions, $function);
+
+   // gets the current increment
+   $increment: $variation-floor * $incrementor;
+
+   // this handles the decimal values for variations
+   @if $variation-remander > 0{
+    $increment: $increment + ($incrementor * $variation-remander);
+   }
+
+   // updates the result to be the new value
+   $result: call($function, $result, $increment);
+  }
+
+  // if the smart color is greater than 0
+  $smart-color: abs(map-get($settings, smart-color)); // the abs is to ensure it's using positive numbers since it has to be manipulated to work for both white and black values.
+  @if $smart-color > 0 and index((white, #fff, #ffffff, black, #000, #000000), $result){ // i went with a index of the color values just incase sass changes what it returns in a later release.
+   $result: color(
+             $this,
+             $variation + ($smart-color * if($result == white, 1, -1)), // new variation based off of the smart color
+             $force, // force is same as what was passed because the previous variation could already bed defined.
+             false, // it's false because it's shouldn't be saved.
+             $local-settings
+            );
+  }
+
+ }
+
+
+ // return the result
+ @if type-of($result) == color{
+  @if $save == true{
+   // store the $___defined-colors so it can be merged later
+   $defined: $___defined-colors;
+
+   // get the current color set to work with
+   $this-base-color-string: inspect($this-base-color);
+
+   $placeholder-map: (0: $this-base-color, name: $name-of-color, theme: $theme-of-color);
+
+   // if the color set doesn't exist then create it.
+   @if map-get($defined, $namespace) == null{
+    $defined: map-merge(
+               $defined, (
+                $namespace: (
+                 $this-base-color-string: $placeholder-map
+                )
+               )
+              );
+   }
+
+   // The current set to work with
+   $this-namespace: map-get($defined, $namespace);
+
+   // the map of color variations
+   $this-color: map-get($this-namespace, $this-base-color-string);
+
+   // if this-color doesn't already exist then create it and set the base color
+   @if $this-color == null{
+    $this-color: $placeholder-map;
+   }
+
+   // attempt to get the variation, if there's a defined variation already
+   // and `$overwrite` isn't true then return this attempt and skip everything below
+   // $storage-attempt: map-get($this-color, $variation);
+   $storage-attempt: map-get($___defined-colors, $namespace);
+   $storage-attempt: if($storage-attempt != null, map-get($storage-attempt, $this-base-color-string), null);
+   $storage-attempt: if($storage-attempt != null, map-get($storage-attempt, $variation), null);
+   @if $storage-attempt and not $overwrite{
+    @return $storage-attempt;
+   }
+
+   // add the new color variation to this color
+   $this-color: map-merge($this-color, ($variation: $result));
+
+   // update $___defined-colors to include the new color
+   $___defined-colors: map-merge(
+    map-remove($defined, $namespace),
+    ($namespace: map-merge(
+      map-remove($this-namespace, $this-base-color-string),
+      ($this-base-color-string: $this-color)
+     )
+    )
+   ) !global;
+  }
+  @return $result;
+ }@else{
+  @return $result unquote("/* @errror { #{type-of($result)} isn't a color } */");
+ }
+};
+
+
+
+// @description
+// This will list out the colors of a color namespace and what they're actually called if you need that
+// This is just a helper function to `color`, and is purely for debuging and convenience
+//
+// @arg {string} $namespace ("default") - this is the namespace that you want to list from.
+//
+// @example {scss} - How to list the current colors and their names in the console:
+// $color-settings: (
+//  namespace: "messaging"
+//  colors: (
+//   info: (
+//    0: #ccc,
+//    name: blue /\/ this has to be specifed for every color
+//   ),
+//   ...
+//  )
+// );
+// color(info); /\/ called to add it to the stored map
+// list-colors("messaging");
+//
+// @note {!!!} This pulls from `$___defined-colors` so you must actually call the color before it will show up when you list it.
+@function list-colors($namespace: "default"){
+ $colors: map-get($___defined-colors, $namespace);
+ $seperator: "---------------------------------------------------------------------";
+ $title: "colors #{str-slice($seperator, 0, 3)} #{$namespace} ";
+ $title: $title + str-slice($seperator, str-length($title) + 1);
+ @debug unquote(" ");
+ @debug $title;
+ @each $theme, $value in $colors{
+  @if type-of($value) == map{
+   $color-name: map-get($value, name);
+   $color-name: unquote(if($color-name != null, "// #{$color-name}", ""));
+   @debug "#{map-get($value, theme)} = #{map-get($value, 0)} #{$color-name}";
+  }
+ }
+ @debug $seperator;
+ @debug unquote(" ");
+ @return false;
+};
+
+@mixin list-colors($namespace: "default"){
+ $console-log: list-colors($namespace);
+}
