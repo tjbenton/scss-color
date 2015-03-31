@@ -83,28 +83,24 @@
  // Merges $settings with default color settings
  $settings: if(type-of($settings) == map, map-merge($default-settings, $settings), $default-settings);
 
- $defined-namespace: map-get($___defined-colors, $namespace);
-
+ // this will add a theme for the color
  $colors: map-get($settings, colors);
  @each $theme, $base in $colors{
   @if type-of($base) == map and map-get($base, theme) == null{
-   @debug "TRUE";
    $base: map-merge($base, (theme: $theme))
   }
   $colors: map-merge($colors, ($theme: $base));
  }
 
- $settings: (settings: map-merge($settings, (colors: $colors)));
+ $settings: map-merge($settings, (colors: $colors));
 
- @debug $settings;
- @debug "-------------------------------------------------------------";
+ $defined-namespace: map-get($___defined-colors, $namespace);
 
  $___defined-colors: map-merge($___defined-colors,
                       if($defined-namespace == null,
-                       ($namespace: $settings),
-                       map-merge($defined-namespace, $settings)
+                       ($namespace: (settings: $settings, defined-colors: ())),
+                       map-merge($defined-namespace, (settings: $settings))
                       )
-
                      ) !global;
 }
 
@@ -274,8 +270,7 @@
 
  // try to find the color variation in storage (`$___defined-colors`)
  @if not $result and not $force{
-  $this-namespace: map-get($___defined-colors, map-get($settings, namespace));
-  $stored-attempt: if($this-namespace != null, map-get($this-namespace, $this-base-color), null);
+  $stored-attempt: map-get(map-get($this-namespace, defined-colors), $this-base-color);
   $stored-attempt: if($stored-attempt != null, map-get($stored-attempt, $variation), null);
   @if $stored-attempt {
    // since the color is already defined it doens't need to be defined again so just return the color
@@ -347,56 +342,40 @@
  // return the result
  @if type-of($result) == color{
   @if $save == true{
-   // store the $___defined-colors so it can be merged later
-   $defined: $___defined-colors;
-
+   $defined-colors: map-get($this-namespace, defined-colors);
    // get the current color set to work with
    $this-base-color-string: inspect($this-base-color);
 
-   $placeholder-map: (0: $this-base-color, name: $name-of-color, theme: $theme-of-color);
+   $base-map: (0: $this-base-color);
 
-   // if the color set doesn't exist then create it.
-   @if map-get($defined, $namespace) == null{
-    $defined: map-merge(
-               $defined, (
-                $namespace: (
-                 $this-base-color-string: $placeholder-map
-                )
-               )
-              );
-   }
-
-   // the map of color variations
-   $this-color: map-get($this-namespace, $this-base-color-string);
+   // the map of this colors variations
+   $this-color: map-get($defined-colors, $this-base-color-string);
 
    // if this-color doesn't already exist then create it and set the base color
    @if $this-color == null{
-    $this-color: $placeholder-map;
+    $this-namespace: map-merge($this-namespace, (defined-colors: map-merge($defined-colors, ($this-base-color-string: $base-map))));
+    $defined-colors: map-get($this-namespace, defined-colors);
+    $this-color: map-get($defined-colors, $this-base-color-string);
    }
 
    // attempt to get the variation, if there's a defined variation already
-   // and `$overwrite` isn't true then return this attempt and skip everything below
-   // $storage-attempt: map-get($this-color, $variation);
-   $storage-attempt: map-get($___defined-colors, $namespace);
-   $storage-attempt: if($storage-attempt != null, map-get($storage-attempt, $this-base-color-string), null);
-   $storage-attempt: if($storage-attempt != null, map-get($storage-attempt, $variation), null);
-   @debug $namespace;
-   @if $storage-attempt and not $overwrite{
+   // then return this attempt and skip everything below
+   $storage-attempt: map-get($this-color, $variation);
+   @if $storage-attempt{
     @return $storage-attempt;
    }
 
    // add the new color variation to this color
    $this-color: map-merge($this-color, ($variation: $result));
-   @debug $namespace;
-   // update $___defined-colors to include the new color
-   $___defined-colors: map-merge(
-    map-remove($defined, $namespace),
-    ($namespace: map-merge(
-      map-remove($this-namespace, $this-base-color-string),
-      ($this-base-color-string: $this-color)
-     )
-    )
-   ) !global;
+
+   // update defined colors to include the new color
+   $defined-colors: map-merge($defined-colors, ($this-base-color-string: $this-color));
+
+   // update this-namespace with this color
+   $this-namespace: map-merge($this-namespace, (defined-colors: $defined-colors));
+
+   // update $___defined-colors with the new namespace
+   $___defined-colors: map-merge($___defined-colors, ($namespace: $this-namespace)) !global;
   }
   @return $result;
  }@else{
@@ -410,42 +389,94 @@
 // This will list out the colors of a color namespace and what they're actually called if you need that
 // This is just a helper function to `color`, and is purely for debuging and convenience
 //
-// @arg {string} $namespace ("default") - this is the namespace that you want to list from.
+// @arg {string} $namespace ("default") - this is the namespace that you want to list, or "all" to see all the namespaces
+// @arg {string} $to-console ("colors") - "colors" | "settings" | "defined-colors" | "all"
 //
 // @example {scss} - How to list the current colors and their names in the console:
-// $color-settings: (
+// @include define-color-set("messaging", (
 //  namespace: "messaging"
 //  colors: (
 //   info: (
 //    0: #ccc,
-//    name: blue /\/ this has to be specifed for every color
+//    name: blue /\/ this has to be specifed for every color if you want to see it in the console
 //   ),
 //   ...
 //  )
-// );
+// ));
 // color(info); /\/ called to add it to the stored map
-// list-colors("messaging");
+// console-colors("messaging");
 //
-// @note {!!!} This pulls from `$___defined-colors` so you must actually call the color before it will show up when you list it.
-@function list-colors($namespace: "default"){
- $colors: map-get($___defined-colors, $namespace);
+// @example {scss} - How to log every namespace and their colors, settings, and defined-colors
+// console-colors(all, all);
+@function console-colors($namespace: "default", $to-console: "colors"){
+ @if $namespace == all{
+  @each $space in map-keys($___defined-colors){
+   $d: console-colors($space, $to-console);
+  }
+  @return false;
+ }
+
+ @if $to-console == "all"{
+  @each $name in (colors, settings, defined-colors){
+   $d: console-colors($namespace, $name);
+  }
+  @return false;
+ }
+
+ $this-namespace: map-get($___defined-colors, $namespace);
+ $settings: map-get($this-namespace, settings);
  $seperator: "---------------------------------------------------------------------";
- $title: "colors #{str-slice($seperator, 0, 3)} #{$namespace} ";
+ $title: "colors #{str-slice($seperator, 0, 3)} #{$namespace} #{str-slice($seperator, 0, 3)} #{$to-console}";
  $title: $title + str-slice($seperator, str-length($title) + 1);
  @debug unquote(" ");
  @debug $title;
- @each $theme, $value in $colors{
-  @if type-of($value) == map{
-   $color-name: map-get($value, name);
-   $color-name: unquote(if($color-name != null, "// #{$color-name}", ""));
-   @debug "#{map-get($value, theme)} = #{map-get($value, 0)} #{$color-name}";
+
+ @if $to-console == "colors"{
+  @each $theme, $value in map-get($settings, colors){
+   @if type-of($value) == map{
+    $color-name: map-get($value, name);
+    $color-name: unquote(if($color-name != null, "// #{$color-name}", ""));
+    @debug "#{map-get($value, theme)} = #{map-get($value, 0)} #{$color-name}";
+   }
+  }
+ }@else if $to-console == "settings"{
+  // @debug $settings;
+  @each $setting, $setting-value in $settings{
+   @if type-of($setting-value) == map{
+    @debug "#{$setting}: (";
+     @each $key, $value in $setting-value{
+      @if type-of($value) == map{
+       @debug " #{$key}: (";
+        @each $variation, $color in $value{
+         @debug "  #{$variation}: #{$color},";
+        }
+       @debug " ),"
+      }@else{
+       @debug "#{$key}: #{$value}";
+      }
+
+     }
+    @debug "),";
+   }@else{
+    @debug "#{$setting}: #{$setting-value},";
+   }
+  }
+ }@else if $to-console == "defined-colors"{
+  @each $color, $variations in map-get($this-namespace, defined-colors){
+   @debug "#{$color}: (";
+   @each $variation, $color-value in $variations{
+    @debug " #{$variation}: #{$color-value},";
+   }
+   @debug ");";
   }
  }
+
  @debug $seperator;
  @debug unquote(" ");
+
  @return false;
 };
 
-@mixin list-colors($namespace: "default"){
- $console-log: list-colors($namespace);
+@mixin console-colors($namespace: "default", $to-console: "colors"){
+ $console-log: console-colors($namespace, $to-console);
 }
