@@ -1,15 +1,13 @@
-// @name color
-// @author Tyler Benton
-// @description These are the defaults for the `color` function.
-// @note {!!!} -
-// These should never change. If you want to change them just define your
-// own variable `$this-settings` to overwrite one or more of these settings.
-//
-// @type {map}
-// @private
-@if not variable-exists(___color-settings){
+// If `$___defined-colors` doesn't exist then this creates it.
+// This variable is to store the different namespaces and colors as they're defined.
+@if not global-variable-exists(___defined-colors){
+ $___defined-colors: () !global;
+}
+
+// This should never change. If you want to change them just define your
+// own variable `$color-settings` to overwrite one or more of these settings.
+@if not global-variable-exists(___color-settings){
  $___color-settings: (
-  namespace: "default", // allows for multiple name spaces, so you can create other color functions that call different maps
   base: 0, // defines the base color to look for in the maps
   increment: 5%, // this is a fall back increment if the color functions that are defined are lists and not maps
   colors: (), // placeholder for defined colors, these will always be defined in $color-settings colors
@@ -26,26 +24,91 @@
  ) !global;
 }
 
-// @name color
+
 // @author Tyler Benton
 // @description
-// This merges the default color settings with `$this-settings`. I decided to do this outside
-// the `color` function to improve performance by not merging the default settings and the
-// user defined settings every single time the function is called.
-// @private
-@if variable-exists(color-settings){
- $___color-settings: map-merge($___color-settings, $color-settings);
+// This is used to set the color settings for the default namespace
+// The main reason this is a seperate mixin is for the simple fact that it
+// increases the performance. Only having to merge the namespace settings
+// with the necessary defaults once is a huge performance increase.
+//
+// @arg {string} $namespace (default) - the namespace for your colors
+// @arg {map} $settings (false) - the settings for your namespace. If false it will use the default settings
+// @arg {boolean} $merge-color-settings (true) - Determins if you want to merge your default settings that where defined in `$color-settings`
+//
+// @example {scss} How to define default color settings
+// $color-settings: (
+//  smart-color: .45,
+//  colors: (
+//   a: (
+//    0: #ccc,
+//    name: gray
+//   )
+//  )
+// );
+// \@import "_colors.scss";
+// /\/ define-color-set doesn't need to be called if you define $color-settings (defaults) before you import colors.scss
+//
+// @example {scss} - How to define default color settings after you import colors.scss
+// \@import "_colors.scss";
+// $color-settings: (
+//  smart-color: .45,
+//  colors: (
+//   a: (
+//    0: #ccc,
+//    name: gray
+//   )
+//  )
+// );
+// \@include define-color-set;
+//
+// @example {scss} - How to define a different namespace of colors
+// /@include define-color-set(messaging, (
+//   smart-color: .33,
+//   colors: (
+//    info: (
+//     0: #cbe8f5,
+//     name: light blue
+//    )
+//   )
+//  )
+// );
+@mixin define-color-set($namespace: default, $settings: false, $merge-color-settings: true){
+ // This merges the default color settings(`$color-settings`) with the default settings.
+ $default-settings: if($merge-color-settings and global-variable-exists(color-settings) and type-of($color-settings) == map,
+                     map-merge($___color-settings, $color-settings),
+                     $___color-settings
+                    );
+
+ // Merges $settings with default color settings
+ $settings: if(type-of($settings) == map, map-merge($default-settings, $settings), $default-settings);
+
+ $defined-namespace: map-get($___defined-colors, $namespace);
+
+ $colors: map-get($settings, colors);
+ @each $theme, $base in $colors{
+  @if type-of($base) == map and map-get($base, theme) == null{
+   @debug "TRUE";
+   $base: map-merge($base, (theme: $theme))
+  }
+  $colors: map-merge($colors, ($theme: $base));
+ }
+
+ $settings: (settings: map-merge($settings, (colors: $colors)));
+
+ @debug $settings;
+ @debug "-------------------------------------------------------------";
+
+ $___defined-colors: map-merge($___defined-colors,
+                      if($defined-namespace == null,
+                       ($namespace: $settings),
+                       map-merge($defined-namespace, $settings)
+                      )
+
+                     ) !global;
 }
 
-
-// @name color
-// @author Tyler Benton
-// @description
-// If `$___defined-colors` doesn't exist then this creates it. This variable is to store colors as they're defined.
-// @private
-@if not variable-exists(___defined-colors){
- $___defined-colors: () !global;
-}
+@include define-color-set;
 
 // @name color
 // @author Tyler Benton
@@ -113,22 +176,19 @@
 //  )
 // );
 // color(#fff, 5, true) /\/ forcing it will return #7f7f7f instead of #e2e2e2 which was defined
-//
-//
-@function color($this: #000, $variation: 0, $force: false, $save: true, $settings: false){
+@function color($this: #000, $variation: 0, $force: false, $save: true, $namespace: "default"){
  // Sets save to false because, if you're forcing a color variation you probably don't want to save it.
  @if $force{
   $save: false;
  }
 
- // store the user defined settings in a variable to use later for the smart color
- $local-settings: $settings;
+ $this-namespace: map-get($___defined-colors, $namespace); // The current set to work with
+ @if $this-namespace == null{
+  @error "to use the #{$namespace} you must first set your settings using `@include color-settings(#{$namespace}, (your settings in a map))`";
+  @return false;
+ }
 
- // define the settings to use
- $settings: if($local-settings != false and type-of($local-settings) == map,
-             map-merge($___color-settings, $local-settings), // merge user settings with default settings.
-             $___color-settings // else return just the default color settings.
-            );
+ $settings: map-get($this-namespace, settings);
 
  // helper variables
  $this-type: type-of($this); // stores the type of this so it doesn't have to be called multiple times.
@@ -137,7 +197,6 @@
  $base: map-get($settings, base); // how to determin the base color if the color is in a map
  $name-of-color: null; // placeholder for the actual name of the color
  $theme-of-color: null; // placeholder for the key name
- $namespace: map-get($settings, namespace);
 
  // @example {scss}
  // color(#fff, 2);
@@ -285,7 +344,6 @@
 
  }
 
-
  // return the result
  @if type-of($result) == color{
   @if $save == true{
@@ -308,9 +366,6 @@
               );
    }
 
-   // The current set to work with
-   $this-namespace: map-get($defined, $namespace);
-
    // the map of color variations
    $this-color: map-get($this-namespace, $this-base-color-string);
 
@@ -325,13 +380,14 @@
    $storage-attempt: map-get($___defined-colors, $namespace);
    $storage-attempt: if($storage-attempt != null, map-get($storage-attempt, $this-base-color-string), null);
    $storage-attempt: if($storage-attempt != null, map-get($storage-attempt, $variation), null);
+   @debug $namespace;
    @if $storage-attempt and not $overwrite{
     @return $storage-attempt;
    }
 
    // add the new color variation to this color
    $this-color: map-merge($this-color, ($variation: $result));
-
+   @debug $namespace;
    // update $___defined-colors to include the new color
    $___defined-colors: map-merge(
     map-remove($defined, $namespace),
