@@ -2,10 +2,10 @@
 This makes theming very easy, by giving you the ability to store your colors in seperate namespaces. It also gives you the flexibility of getting different variations from a base color. But it's simple enough to get a variation of a color value without needing to define a namespace.
 
 
-# `define-color-set($namespace: default, $settings: false, $merge-color-settings: true)`
+### `define-color-set($namespace: default, $settings: false, $merge-color-settings: true)`
 This is used to set the color settings for the default namespace. The main reason this is a seperate mixin is for the simple fact that it increases the performance. Only having to merge the namespace settings with the necessary defaults once is a huge performance increase.
 
-### $settings options
+##### $settings options
 These are the default settings, so if you like these you don't have to define anything.
 ```scss
 $settings: (
@@ -25,7 +25,7 @@ $settings: (
 );
 ```
 
-### Example: How to define default color settings
+##### Example: How to define default color settings
 
 ``` scss
 $color-settings: ( // must be `$color-settings`
@@ -42,7 +42,7 @@ $color-settings: ( // must be `$color-settings`
 // define-color-set doesn't need to be called if you define $color-settings (defaults) before you import `_colors.scss` it will automatically merge them.
 ```
 
-### Example: How to define default color settings after you import `_colors.scss`
+##### Example: How to define default color settings after you import `_colors.scss`
 ``` scss
 $color-settings: (
  smart-color: .45,
@@ -56,7 +56,7 @@ $color-settings: (
 @include define-color-set; // this merges your preferences with the defaults, these will be used for every namespace that you define.
 ```
 
-### Example: How to define a different namespace of colors
+##### Example: How to define a different namespace of colors
 ```scss
 @include define-color-set(messaging, (
   smart-color: .33,
@@ -71,17 +71,17 @@ $color-settings: (
 ```
 
 
-# `color($this: #000, $variation: 0, $force: false, $save: true, $namespace: "default")`
+### `color($this: #000, $variation: 0, $force: false, $save: true, $namespace: "default")`
 
 
-### Example: Get a different variation of a color value
+##### Example: Get a different variation of a color value
 ```scss
 $turquoise: #1abc9c;
 color($turquoise, -2.5); // lighter - #33e3c0
 color($turquoise, 2.5); // darker - #12846e
 ```
 
-### Example: Using the default theming option of this function
+##### Example: Using the default theming option of this function
 ```scss
 $color-settings: ( 
  colors: ( 
@@ -97,7 +97,7 @@ color(a) // #ccc
 color(a, 1) // #bfbfbf
 ```
 
-### Example: Getting colors from a specific namespace
+##### Example: Getting colors from a specific namespace
 ```
 // define the namespace for the messaging colors
 @include define-color-set(messaging, (
@@ -120,5 +120,5 @@ messaging-color(info, 2.25) // #9bd3ec
 @todo add more examples
 
 
-# `console-colors($namespace: "default", $to-console: "colors")`
+### `console-colors($namespace: "default", $to-console: "colors")`
 @todo add more examples
