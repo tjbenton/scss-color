@@ -214,7 +214,7 @@
   $this-type: type-of($this);
 
   @if $this == null{
-   @error "Couldn't find '#{$this}' in map-get($settings, colors): #{map-get($settings, colors)}";
+   @error "Couldn't find '#{$theme-of-color}' in map-get($settings, colors): #{map-get($settings, colors)}";
    @return false;
   }
  }
