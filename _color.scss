@@ -193,22 +193,14 @@
  $base: map-get($settings, base); // how to determin the base color if the color is in a map
  $name-of-color: null; // placeholder for the actual name of the color
  $theme-of-color: null; // placeholder for the key name
-
- // @example {scss}
- // color(#fff, 2);
- @if $this-type == color{
-  $this-base-color: $this;
-  @if $variation == $base{
-   // @example {scss}
-   // color(#ccc, 0); /\/ #ccc
-   $result: $this-base-color;
-  }
- }
-
+ 
  // @example {scss}
  // $color-settings: (
  //  colors: (
- //   a: #ccc
+ //   a: #ccc,
+ //   b: (
+ //    0: #aaa
+ //   )
  //  )
  // );
  // color(a, 3); /\/ #b2b2b2
@@ -224,6 +216,17 @@
   @if $this == null{
    @error "Couldn't find '#{$this}' in map-get($settings, colors): #{map-get($settings, colors)}";
    @return false;
+  }
+ }
+ 
+ // @example {scss}
+ // color(#fff, 2);
+ @if $this-type == color{
+  $this-base-color: $this;
+  @if $variation == $base{
+   // @example {scss}
+   // color(#ccc, 0); /\/ #ccc
+   $result: $this-base-color;
   }
  }
 
