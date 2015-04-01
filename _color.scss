@@ -336,7 +336,7 @@
              $variation + ($smart-color * if($result == white, 1, -1)), // new variation based off of the smart color
              $force, // force is same as what was passed because the previous variation could already bed defined.
              false, // it's false because it's shouldn't be saved.
-             $local-settings
+             $namespace
             );
   }
 
