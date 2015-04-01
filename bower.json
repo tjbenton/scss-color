@@ -5,7 +5,7 @@
   "authors": [
     "Tyler Benton <tjbenton21@gmail.com>"
   ],
-  "description": "The last scss color function you'll ever need, it keeps all your colors in one place while being able to get different variations of it quickly and easily",
+  "description": "This makes theming very easy, by giving you the ability to store your colors in seperate namespaces.",
   "main": "_colors.scss",
   "keywords": [
     "theme",
