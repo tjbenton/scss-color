@@ -11,6 +11,9 @@
     "theme",
     "namespace",
     "colors",
+    "color",
+    "variation",
+    "variations",
     "sass",
     "scss"
   ],
