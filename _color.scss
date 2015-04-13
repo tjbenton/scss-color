@@ -73,7 +73,7 @@
 //   )
 //  )
 // );
-@mixin define-color-set($namespace: default, $settings: false, $merge-color-settings: true){
+@mixin define-color-set($namespace: "default", $settings: false, $merge-color-settings: true){
  // This merges the default color settings(`$color-settings`) with the default settings.
  $default-settings: if($merge-color-settings and global-variable-exists(color-settings) and type-of($color-settings) == map,
                      map-merge($___color-settings, $color-settings),
@@ -99,7 +99,7 @@
  $___defined-colors: map-merge($___defined-colors,
                       if($defined-namespace == null,
                        ($namespace: (settings: $settings, defined-colors: ())),
-                       map-merge($defined-namespace, (settings: $settings))
+                       ($namespace: (map-merge($defined-namespace, (settings: $settings))))
                       )
                      ) !global;
 }
@@ -193,7 +193,7 @@
  $base: map-get($settings, base); // how to determin the base color if the color is in a map
  $name-of-color: null; // placeholder for the actual name of the color
  $theme-of-color: null; // placeholder for the key name
- 
+
  // @example {scss}
  // $color-settings: (
  //  colors: (
@@ -218,7 +218,7 @@
    @return false;
   }
  }
- 
+
  // @example {scss}
  // color(#fff, 2);
  @if $this-type == color{
