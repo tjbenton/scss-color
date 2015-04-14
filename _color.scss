@@ -26,6 +26,8 @@
 
 
 // @author Tyler Benton
+// @page helpers/mixins
+//
 // @description
 // This is used to set the color settings for the default namespace
 // The main reason this is a seperate mixin is for the simple fact that it
@@ -36,7 +38,7 @@
 // @arg {map} $settings (false) - the settings for your namespace. If false it will use the default settings
 // @arg {boolean} $merge-color-settings (true) - Determins if you want to merge your default settings that where defined in `$color-settings`
 //
-// @example {scss} How to define default color settings
+// @markup {scss} - How to define default color settings
 // $color-settings: (
 //  smart-color: .45,
 //  colors: (
@@ -49,7 +51,7 @@
 // \@import "_colors.scss";
 // /\/ define-color-set doesn't need to be called if you define $color-settings (defaults) before you import colors.scss
 //
-// @example {scss} - How to define default color settings after you import colors.scss
+// @markup {scss} - How to define default color settings after you import colors.scss
 // \@import "_colors.scss";
 // $color-settings: (
 //  smart-color: .45,
@@ -62,7 +64,7 @@
 // );
 // \@include define-color-set;
 //
-// @example {scss} - How to define a different namespace of colors
+// @markup {scss} - How to define a different namespace of colors
 // /@include define-color-set(messaging, (
 //   smart-color: .33,
 //   colors: (
@@ -108,32 +110,36 @@
 
 // @name color
 // @author Tyler Benton
+// @page helpers/functions
+//
 // @description
 // This function helps control the colors that are used on the site.
 // It will get dynamic color values based off a **base** color See the examples for more information.
 // It's highly configurable, and focuses on performance.
 //
-// @arg {color | map | key-of-a-map(string)} $this (#000) - The type determins how to find the correct color.
-// @arg {integer} $variation (0) - This accepts any integer value, and does support decimal points.
-// @arg {boolean} $force (false) - This forces the function to ignore already defined color values, and has it get a new varation.
-// @arg {boolean} $save (true, false) - This determins if you want to save the color variation. The reason there're two defaults is that if $force is true then by default the status of $save changes to false
-// @arg {boolean | map} $settings (false) - These are the user defined settings stored in $this-settings, if there're no color settings then it's false
-// @arg {boolean} $list (false) - This will list out the colors theme, color, and name that you specify in the settings.
+// @arg {color | map | key-of-a-map(string)} $this - The type determins how to find the correct color.
+// @arg {integer} $variation - This accepts any integer value, and does support decimal points.
+// @arg {boolean} $force - This forces the function to ignore already defined color values, and has it get a new varation.
+// @arg {boolean} $save - This determins if you want to save the color variation. The reason there're two defaults is that if $force is true then by default the status of $save changes to false
+// @arg {boolean | map} $settings - These are the user defined settings stored in $this-settings, if there're no color settings then it's false
+// @arg {boolean} $list - This will list out the colors theme, color, and name that you specify in the settings.
 //
 // @returns {color} - The color variation that you specified from the namespace that you specifed
 //
-// @example {scss} - Simplest form:
+// @markup {scss} (example="false") - Simplest form:
 // color(#fff, 1.75); /\/ #e9e9e9
 //
-// @example {scss} - Defined colors:
+// @markup {scss} (example="false") - Defined colors:
 // $color-settings: (
 //  colors: (
 //   a: #ccc
 //  )
 // );
-// color(a, 3); /\/ #a6a6a6
+// .foo{
+//  color(a, 3); /\/ #a6a6a6
+// }
 //
-// @example {scss} - Using a different map of colors other than default
+// @markup {scss} (example="false") - Using a different map of colors other than default
 // /\/ option 1
 // $messaging-colors: (
 //  info: (
@@ -142,8 +148,9 @@
 //  ),
 //  ...
 // );
-// color(map-get($messaging-colors, info), 2);
-//
+// .foo{
+//  color(map-get($messaging-colors, info), 2);
+// }
 // /\/ option 2(much better way)
 // $messaging-settings: (
 //  name-space: "messaging",
@@ -158,9 +165,11 @@
 // \@function messaging-color($type, $variation: 0){
 //  \@return color($type, $variation, $settings: $messaging-settings);
 // }
-// messaging-color(info, -1) /\/ #cbe8f5
+// .foo{
+//  color: messaging-color(info, -1); /\/ #cbe8f5
+// }
 //
-// @example {scss} - How to force this function to get a variation without checking locally
+// @markup {scss} (example="false") - How to force this function to get a variation without checking locally
 // $color-settings: (
 //  colors: (
 //   a: (
@@ -194,7 +203,7 @@
  $name-of-color: null; // placeholder for the actual name of the color
  $theme-of-color: null; // placeholder for the key name
 
- // @example {scss}
+ // ```scss
  // $color-settings: (
  //  colors: (
  //   a: #ccc,
@@ -203,7 +212,8 @@
  //   )
  //  )
  // );
- // color(a, 3); /\/ #b2b2b2
+ // color(a, 3); // #b2b2b2
+ // ```
  @if $this-type == string{
   // stores the name of this theme
   $theme-of-color: $this;
@@ -219,18 +229,20 @@
   }
  }
 
- // @example {scss}
+ // ```scss
  // color(#fff, 2);
+ // ```
  @if $this-type == color{
   $this-base-color: $this;
   @if $variation == $base{
-   // @example {scss}
-   // color(#ccc, 0); /\/ #ccc
+   // ```scss
+   // color(#ccc, 0); // #ccc
+   // ```
    $result: $this-base-color;
   }
  }
 
- // @example {scss}
+ // ```scss
  // $messaging-settings: (
  //  name-space: "messaging",
  //  colors: (
@@ -245,6 +257,7 @@
  //  \@return color($type, $variation, $settings: $messaging-settings);
  // }
  // messaging-color(info, -1) /\/ #cbe8f5
+ // ```
  @if not $result and $this-type == map{
   // defineds base color
   $this-base-color: map-get($this, $base);
@@ -387,7 +400,9 @@
 };
 
 
-
+// @author Tyler Benton
+// @page helpers/functions
+//
 // @description
 // This will list out the colors of a color namespace and what they're actually called if you need that
 // This is just a helper function to `color`, and is purely for debuging and convenience
@@ -395,7 +410,7 @@
 // @arg {string} $namespace ("default") - this is the namespace that you want to list, or "all" to see all the namespaces
 // @arg {string} $to-console ("colors") - "colors" | "settings" | "defined-colors" | "all"
 //
-// @example {scss} - How to list the current colors and their names in the console:
+// @markup {scss} (example="false") - How to list the current colors and their names in the console:
 // @include define-color-set("messaging", (
 //  namespace: "messaging"
 //  colors: (
@@ -406,11 +421,15 @@
 //   ...
 //  )
 // ));
-// color(info); /\/ called to add it to the stored map
-// console-colors("messaging");
 //
-// @example {scss} - How to log every namespace and their colors, settings, and defined-colors
-// console-colors(all, all);
+// .foo{
+//  color: color(info); /\/ called to add it to the stored map
+// }
+//
+// $console: console-colors("messaging");
+//
+// @markup {scss} (example="false") - How to log every namespace and their colors, settings, and defined-colors
+// $console: console-colors(all, all);
 @function console-colors($namespace: "default", $to-console: "colors"){
  @if $namespace == all{
   @each $space in map-keys($___defined-colors){
@@ -480,6 +499,36 @@
  @return false;
 };
 
+// @author Tyler Benton
+// @page helpers/mixins
+//
+// @description
+// This will list out the colors of a color namespace and what they're actually called if you need that
+// This is just a helper function to `color`, and is purely for debuging and convenience
+//
+// @arg {string} $namespace ("default") - this is the namespace that you want to list, or "all" to see all the namespaces
+// @arg {string} $to-console ("colors") - "colors" | "settings" | "defined-colors" | "all"
+//
+// @markup {scss} (example="false") - How to list the current colors and their names in the console:
+// @include define-color-set("messaging", (
+//  namespace: "messaging"
+//  colors: (
+//   info: (
+//    0: #ccc,
+//    name: blue /\/ this has to be specifed for every color if you want to see it in the console
+//   ),
+//   ...
+//  )
+// ));
+//
+// .foo{
+//  color: color(info); /\/ called to add it to the stored map
+// }
+//
+// @include console-colors("messaging");
+//
+// @markup {scss} (example="false") - How to log every namespace and their colors, settings, and defined-colors
+// @include console-colors(all, all);
 @mixin console-colors($namespace: "default", $to-console: "colors"){
  $console-log: console-colors($namespace, $to-console);
 }
