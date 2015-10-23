@@ -286,7 +286,7 @@
 
  // try to find the color variation in storage (`$___defined-colors`)
  @if not $result and not $force{
-  $stored-attempt: map-get(map-get($this-namespace, defined-colors), $this-base-color);
+  $stored-attempt: map-get(map-get($this-namespace, defined-colors), "#{$this-base-color}");
   $stored-attempt: if($stored-attempt != null, map-get($stored-attempt, $variation), null);
   @if $stored-attempt {
    // since the color is already defined it doens't need to be defined again so just return the color
@@ -360,7 +360,7 @@
   @if $save == true{
    $defined-colors: map-get($this-namespace, defined-colors);
    // get the current color set to work with
-   $this-base-color-string: inspect($this-base-color);
+   $this-base-color-string: "#{$this-base-color}";
 
    $base-map: (0: $this-base-color);
 
