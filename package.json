@@ -1,0 +1,26 @@
+{
+  "author": "Tyler Benton <tjbenton21@gmail.com> (https://github.com/tjbenton)",
+  "name": "scss-color",
+  "version": "1.0.3",
+  "description": "This makes theming very easy, by giving you the ability to store your colors in seperate namespaces.",
+  "main": "_colors.scss",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/tjbenton/scss-color.git"
+  },
+  "keywords": [
+    "theme",
+    "namespace",
+    "colors",
+    "color",
+    "variation",
+    "variations",
+    "sass",
+    "scss"
+  ],
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/tjbenton/scss-color/issues"
+  },
+  "homepage": "https://github.com/tjbenton/scss-color#readme"
+}
