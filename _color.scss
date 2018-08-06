@@ -338,7 +338,10 @@
    }
 
    // updates the result to be the new value
-   $result: call($function, $result, $increment);
+   // "DEPRECATION WARNING: Passing a string to call() is deprecated and will be
+   // illegal in Sass 4.0" with lib-sass 3.5.0"
+   // Sass 3.5 compatibility: Use call(get-function('foo'), $args) instead of call('foo', $args)
+   $result: call(get-function($function), $result, $increment);
   }
 
   // if the smart color is greater than 0
