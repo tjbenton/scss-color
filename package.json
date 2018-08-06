@@ -9,7 +9,7 @@
   "main": "_colors.scss",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/mdsither/scss-color.git"
+    "url": "git+https://github.com/tjbenton/scss-color.git"
   },
   "keywords": [
     "theme",
@@ -23,7 +23,7 @@
   ],
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/mdsither/scss-color/issues"
+    "url": "https://github.com/tjbenton/scss-color/issues"
   },
-  "homepage": "https://github.com/mdsither/scss-color#readme"
+  "homepage": "https://github.com/tjbenton/scss-color#readme"
 }
