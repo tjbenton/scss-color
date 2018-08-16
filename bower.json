@@ -1,9 +1,12 @@
 {
   "name": "scss-color",
-  "version": "1.0.5",
+  "version": "2.0.0",
   "homepage": "https://github.com/tjbenton/scss-color/",
   "authors": [
     "Tyler Benton <tjbenton21@gmail.com>"
+  ],
+  "contributors": [
+    "Mike Sither <michael.sither@gmail.com> (https://github.com/mdsither)"
   ],
   "description": "This makes theming very easy, by giving you the ability to store your colors in seperate namespaces.",
   "main": "_colors.scss",

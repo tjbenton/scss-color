@@ -1,8 +1,11 @@
 {
   "author": "Tyler Benton <tjbenton21@gmail.com> (https://github.com/tjbenton)",
+  "contributors": [
+    "Mike Sither <michael.sither@gmail.com> (https://github.com/mdsither)"
+  ],
   "name": "scss-color",
-  "version": "1.0.5",
-  "description": "This makes theming very easy, by giving you the ability to store your colors in seperate namespaces.",
+  "version": "2.0.0",
+  "description": "This makes theming very easy, by giving you the ability to store your colors in separate namespaces.",
   "main": "_colors.scss",
   "repository": {
     "type": "git",
